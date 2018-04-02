@@ -185,6 +185,24 @@ function sleep(sec)
     socket.select(nil, nil, sec)
 end
 
+local function table_to_str(t)
+
+    local result = "";
+
+    for k,v in pairs(t) do
+        if v then
+            if (type(v) == "table") then
+                result = result .. table_to_str(v);
+            else
+                v = string.gsub(v, '"', '\\\"');
+                result = result .. '"' .. v .. '",';
+            end
+        end
+    end
+
+    return result;
+end
+
 -- handlers
 local function apns_handler(event)
 	local settings = event.settings;
@@ -192,6 +210,14 @@ local function apns_handler(event)
 	-- prepare data to send (using latest binary format, not the legacy binary format or the new http/2 format)
 	local payload;
 	if push_priority == "high" then
+		local body_txt = push_alert;
+		local stanza_xml_raw = table_to_str(event.stanza[1]);
+		string.gsub(stanza_xml_raw, '"last%-message%-body","([^"]*)"', function(txt) body_txt = txt; end);
+		
+		if body_txt then
+			push_alert = body_txt;
+		end
+		
 		payload = '{"aps":{"alert":"'..push_alert..'","sound":"default"}}';
 	else
 		payload = '{"aps":{"content-available":1}}';
