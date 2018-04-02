@@ -26,6 +26,7 @@ local string = string;
 -- configuration
 local body_size_limit = 4096; -- 4 KB
 local debugging = module:get_option_boolean("push_appserver_debugging", false);		-- debugging (should be false on production servers)
+local rate_limit_enable = module:get_option_boolean("push_appserver_rate_limit_enable", true);
 local rate_limit = module:get_option_number("push_appserver_rate_limit", 5);		-- allow only one push in five seconds (try to mitigate DOS attacks)
 
 -- global state
@@ -241,11 +242,13 @@ module:hook("iq/host", function(event)
 	if secret ~= settings["secret"] then return sendError(origin, stanza); end
 	
 	-- throttling
-	local throttle = create_throttle(settings["node"]);
-	if not throttle:poll(1) then
-		module:log("warn", "Rate limit for node '%s' reached, ignoring push request (and returning 'OK')", settings["node"]);
-		origin.send(st.reply(stanza));
-		return true;
+	if rate_limit_enable then
+		local throttle = create_throttle(settings["node"]);
+		if not throttle:poll(1) then
+			module:log("warn", "Rate limit for node '%s' reached, ignoring push request (and returning 'OK')", settings["node"]);
+			origin.send(st.reply(stanza));
+			return true;
+		end
 	end
 	
 	module:log("info", "Firing event '%s' (node = '%s', secret = '%s')", "incoming-push-to-"..settings["type"], settings["node"], settings["secret"]);
