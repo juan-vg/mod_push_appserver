@@ -212,7 +212,11 @@ local function apns_handler(event)
 	local payload;
 	local priority = push_priority;
 	if push_priority == "auto" then
-		priority = summary["last-message-body"] ~= nil ? "high" : "silent";
+		if summary["last-message-body"] ~= nil then
+			priority = "high"
+		else
+			priority = "silent"
+		end
 	end
 	if priority == "high" then
 		local body_txt = push_alert;
