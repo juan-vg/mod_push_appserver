@@ -210,8 +210,11 @@ local function apns_handler(event)
 	
 	-- prepare data to send (using latest binary format, not the legacy binary format or the new http/2 format)
 	local payload;
-<<<<<<< HEAD
-	if push_priority == "high" then
+	local priority = push_priority;
+	if push_priority == "auto" then
+		priority = summary["last-message-body"] ~= nil ? "high" : "silent";
+	end
+	if priority == "high" then
 		local body_txt = push_alert;
 		local stanza_xml_raw = table_to_str(event.stanza[1]);
 		string.gsub(stanza_xml_raw, '"last%-message%-body","([^"]*)"', function(txt) body_txt = txt; end);
@@ -219,14 +222,6 @@ local function apns_handler(event)
 		if body_txt then
 			push_alert = body_txt;
 		end
-		
-=======
-	local priority = push_priority;
-	if push_priority == "auto" then
-		priority = summary["last-message-body"] ~= nil ? "high" : "silent";
-	end
-	if priority == "high" then
->>>>>>> upstream/master
 		payload = '{"aps":{"alert":"'..push_alert..'","sound":"default"}}';
 	else
 		payload = '{"aps":{"content-available":1}}';
