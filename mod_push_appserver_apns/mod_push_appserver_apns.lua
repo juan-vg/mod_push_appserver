@@ -224,7 +224,12 @@ local function apns_handler(event)
 		string.gsub(stanza_xml_raw, '"last%-message%-body","([^"]*)"', function(txt) body_txt = txt; end);
 		
 		if body_txt then
+			body_txt = string.gsub(body_txt, '\n', '');
+			body_txt = string.gsub(body_txt, '\r', '');
 			push_alert = body_txt;
+		end
+		if not push_alert then
+			push_alert = "";
 		end
 		payload = '{"aps":{"alert":"'..push_alert..'","sound":"default"}}';
 	else
